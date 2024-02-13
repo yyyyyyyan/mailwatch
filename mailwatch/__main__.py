@@ -1,6 +1,10 @@
+import logging
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
+from mailwatch.logging import ColorFormatter
+from mailwatch.logging import LOG_LEVELS
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Send notification on new maildir mail")
@@ -57,3 +61,24 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    log_level = LOG_LEVELS.get(args.log_level, logging.INFO)
+    logger = logging.getLogger("mailwatch")
+    logger.setLevel(log_level)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(log_level)
+    stream_handler.setFormatter(ColorFormatter())
+    logger.addHandler(stream_handler)
+
+    try:
+        mailbox_path = args.mail_path / args.account / args.mailbox / "new"
+        if not mailbox_path.exists():
+            raise FileNotFoundError(f"{mailbox_path} does not exist")
+        if not mailbox_path.is_dir():
+            raise NotADirectoryError(f"{mailbox_path} is not a directory")
+    except FileNotFoundError as err:
+        logger.critical(err)
+        sys.exit(2)
+    except NotADirectoryError as err:
+        logger.critical(err)
+        sys.exit(20)

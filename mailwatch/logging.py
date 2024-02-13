@@ -1,5 +1,13 @@
 import logging
 
+LOG_LEVELS = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "error": logging.ERROR,
+    "critical": logging.CRITICAL,
+}
+
 
 class ColorFormatter(logging.Formatter):
     grey = "\x1b[38;20m"
