@@ -3,8 +3,39 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mailwatch.logging import ColorFormatter
-from mailwatch.logging import LOG_LEVELS
+
+LOG_LEVELS = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "error": logging.ERROR,
+    "critical": logging.CRITICAL,
+}
+
+
+class ColorFormatter(logging.Formatter):
+    grey = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+    format = (
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+    )
+
+    FORMATS = {
+        logging.DEBUG: grey + format + reset,
+        logging.INFO: grey + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: red + format + reset,
+        logging.CRITICAL: bold_red + format + reset,
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Send notification on new maildir mail")
@@ -61,7 +92,7 @@ if __name__ == "__main__":
     notify_send_group.add_argument(
         "-i",
         "--notification-icon",
-        default=Path(__file__).parent.parent / "static/mail.png",
+        default=Path(__file__).parent / "static/mail.png",
         type=Path,
         help="Notification icon",
     )
