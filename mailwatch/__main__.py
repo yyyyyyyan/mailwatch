@@ -27,6 +27,12 @@ if __name__ == "__main__":
 
     notify_send_group = parser.add_argument_group("notify-send Options")
     notify_send_group.add_argument(
+        "-c",
+        "--notification-command",
+        default="/usr/bin/notify-send",
+        help="Command to send notification",
+    )
+    notify_send_group.add_argument(
         "-s",
         "--notification-summary",
         default="New mail from {from}",
