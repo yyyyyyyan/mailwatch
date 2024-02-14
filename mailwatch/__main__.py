@@ -1,11 +1,17 @@
 import logging
 import sys
 from argparse import ArgumentParser
+from enum import IntEnum
 from pathlib import Path
 
 from mailwatch.events import NewMailEventHandler
 from mailwatch.logging import ColorFormatter
 from mailwatch.logging import LOG_LEVELS
+
+
+class ExitCodes(IntEnum):
+    FILE_NOT_FOUND = 2
+    NOT_A_DIRECTORY = 20
 
 
 if __name__ == "__main__":
@@ -84,19 +90,22 @@ if __name__ == "__main__":
     stream_handler.setFormatter(ColorFormatter())
     logger.addHandler(stream_handler)
 
-    try:
-        mailbox_path = args.mail_path / args.account / args.mailbox / "new"
-        if not mailbox_path.is_dir():
-            raise NotADirectoryError(f"{mailbox_path} is not a valid directory")
-        new_mail_event_handler = NewMailEventHandler(
-            mailbox_path.parent,
-            args.notification_command,
-            args.notification_summary,
-            args.notification_body,
-            args.notification_urgency,
-            args.notification_duration,
-            args.notification_icon,
-        )
-    except NotADirectoryError as err:
-        logger.critical(err)
-        sys.exit(20)
+    mailbox_path = args.mail_path / args.account / args.mailbox / "new"
+    if not mailbox_path.is_dir():
+        logger.critical(f"{mailbox_path} is not a valid directory")
+        sys.exit(ExitCodes.NOT_A_DIRECTORY)
+
+    new_mail_event_handler = NewMailEventHandler(
+        mailbox_path.parent,
+        args.notification_command,
+        args.notification_summary,
+        args.notification_body,
+        args.notification_urgency,
+        args.notification_duration,
+        args.notification_icon,
+    )
+    new_mail_event_handler.notification_handler.add_default_context(
+        account=args.account, mailbox_path=mailbox_path
+    )
+    # TODO: add offlineimap options to gather context
+    # TODO: create observer and schedule event
