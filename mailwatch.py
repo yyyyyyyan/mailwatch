@@ -2,6 +2,8 @@ import logging
 import subprocess
 import sys
 from argparse import ArgumentParser
+from datetime import datetime
+from email.header import decode_header
 from mailbox import Maildir
 from pathlib import Path
 
@@ -62,7 +64,7 @@ class NewMailEventHandler(FileSystemEventHandler):
         self.notification_icon = notification_icon
         self.logger = logging.getLogger("mailwatch")
 
-    def _get_default_context(self):
+    def _get_mailbox_context(self):
         new_count = unread_count = read_count = 0
         for message in self.mailbox:
             if message.get_subdir() == "new":
@@ -72,11 +74,21 @@ class NewMailEventHandler(FileSystemEventHandler):
             else:
                 unread_count += 1
         return {
-            "new_count": new_count,
-            "unread_count": unread_count,
-            "read_count": read_count,
-            "total_count": unread_count + read_count,
+            "mailbox.new_count": new_count,
+            "mailbox.unread_count": unread_count,
+            "mailbox.read_count": read_count,
+            "mailbox.total_count": unread_count + read_count,
         }
+
+    def _get_message_context(self, message_key):
+        message = self.mailbox.get_message(message_key)
+        context = {"message.delivery_date": datetime.fromtimestamp(message.get_date())}
+        for header_key, header_value in message.items():
+            header_decoded, header_charset = decode_header(header_value)
+            if header_charset is not None:
+                header_decoded = header_decoded.decode(header_charset)
+            context[f"message.headers.{header_key.lower()}"] = header_decoded
+        return context
 
     def _send_notification(self, **context):
         initial_cmd = self.notification_command.format(**context)
@@ -110,8 +122,11 @@ class NewMailEventHandler(FileSystemEventHandler):
             self.logger.error(f"Notification command '{cmd[0]}' not found")
 
     def on_created(self, event):
-        # message = self.mailbox.get_message(event.src_path.split(self.mailbox.colon)[0])
-        context = self._get_default_context()
+        context = {
+            **self._get_message_context(event.src_path.split(self.mailbox.colon)[0]),
+            **self._get_mailbox_context(),
+        }
+        self.logger.debug(f"Context for notification: {context}")
         self._send_notification(context)
         # TODO: add headers to context from/subject/ to? (decode)
         # TODO: add account to context
@@ -146,13 +161,13 @@ if __name__ == "__main__":
     notify_send_group.add_argument(
         "-s",
         "--notification-summary",
-        default="New mail from {from}",
+        default="New mail from {message.headers.from}",
         help="Notification summary",
     )
     notify_send_group.add_argument(
         "-b",
         "--notification-body",
-        default="{unread_count} unread emails in {account}",
+        default="{mailbox.unread_count} unread emails in {account}",
         help="Notification body",
     )
     notify_send_group.add_argument(
