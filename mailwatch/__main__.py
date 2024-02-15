@@ -75,7 +75,7 @@ if __name__ == "__main__":
     notify_send_group.add_argument(
         "--default-notification-icon",
         action="store_const",
-        const=Path(__file__).parent / "static/mail.png",
+        const=Path(__file__).parent.parent / "static/mail.png",
         dest="notification_icon",
         help="Use default notification icon (this option overrides --notification-icon)",
     )
