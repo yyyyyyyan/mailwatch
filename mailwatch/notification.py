@@ -57,11 +57,7 @@ class NotificationHandler:
         cmd = self.get_cmd(**context)
         logger.debug(f"Running command: '{' '.join(cmd)}'")
         try:
-            proc = subprocess.run(cmd, capture_output=True, check=False)
-            if proc.stderr:
-                raise subprocess.CalledProcessError(
-                    proc.returncode, cmd, proc.stdout, proc.stderr
-                )
+            subprocess.run(cmd, capture_output=True, check=True)
         except FileNotFoundError as err:
             raise CommandNotFoundError(
                 f"Notification command '{cmd[0]}' not found"
