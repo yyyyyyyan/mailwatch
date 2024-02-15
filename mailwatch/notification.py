@@ -65,9 +65,8 @@ class NotificationHandler:
         try:
             proc = subprocess.run(cmd, capture_output=True)
             if proc.stderr:
-                # TODO: replace this for raising exception (subprocess.CalledProcessError) and dealing with logging on event
-                logger.error(
-                    f"Notification command returned an error: {proc.stderr.decode('utf8')}"
+                raise subprocess.CalledProcessError(
+                    proc.returncode, cmd, proc.stdout, proc.stderr
                 )
         except FileNotFoundError:
             raise CommandNotFoundError(f"Notification command '{cmd[0]}' not found")

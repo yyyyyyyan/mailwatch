@@ -1,4 +1,5 @@
 import logging
+from subprocess import CalledProcessError
 
 from watchdog.events import FileSystemEventHandler
 
@@ -26,6 +27,10 @@ class NewMailEventHandler(FileSystemEventHandler):
             self._send_notification(**context)
         except CommandNotFoundError as err:
             logger.error(err)
+        except CalledProcessError as err:
+            logger.error(
+                f"Notification command returned an error and exited with status {err.returncode}: {err.stderr.decode('utf8')}"
+            )
 
     def on_created(self, event):
         context = {
