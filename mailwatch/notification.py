@@ -6,17 +6,11 @@ logger = logging.getLogger("mailwatch")
 
 
 class IconNotFoundError(FileNotFoundError):
-    """Icon not found."""
-
-    def __init__(self, *args, **kwargs):  # real signature unknown
-        pass
+    pass
 
 
 class CommandNotFoundError(FileNotFoundError):
-    """Command not found."""
-
-    def __init__(self, *args, **kwargs):  # real signature unknown
-        pass
+    pass
 
 
 class NotificationHandler:
