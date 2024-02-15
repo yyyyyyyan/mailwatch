@@ -1,41 +1,39 @@
-import logging
 from subprocess import CalledProcessError
 
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import LoggingEventHandler
 
 from mailwatch.mailbox import MailWatchMailbox
 from mailwatch.notification import CommandNotFoundError
 from mailwatch.notification import IconNotFoundError
 from mailwatch.notification import NotificationHandler
 
-logger = logging.getLogger("mailwatch")
 
-
-# TODO: herdar de LoggingEventHandler e definir self.logger
-class NewMailEventHandler(FileSystemEventHandler):
-    def __init__(self, mailbox_path, *notification_options):
+class NewMailEventHandler(LoggingEventHandler):
+    def __init__(self, logger, mailbox_path, *notification_options):
         self.mailbox = MailWatchMailbox(mailbox_path, create=False)
         self.notification_handler = NotificationHandler(*notification_options)
+        super().__init__(logger)
 
     def _send_notification(self, **context):
-        logger.debug(f"Context for notification: {context}")
+        self.logger.debug(f"Context for notification: {context}")
         try:
             self.notification_handler.send_notification(**context)
         except IconNotFoundError as err:
-            logger.error(f"{err} - no icon will be used")
+            self.logger.error(f"{err} - no icon will be used")
             self.notification_handler.icon_fmt = None
             self._send_notification(**context)
         except CommandNotFoundError as err:
-            logger.error(err)
+            self.logger.error(err)
         except CalledProcessError as err:
-            logger.error(
+            self.logger.error(
                 f"Notification command returned an error and exited with status {err.returncode}: {err.stderr.decode('utf8')}"
             )
 
     def on_created(self, event):
+        super().on_created(event)
         context = {
             **self.mailbox.get_context(),
             **self.mailbox.get_message_context(event.src_path),
         }
-        logger.debug(f"Context for notification: {context}")
+        self.logger.debug(f"Context for notification: {context}")
         self._send_notification(**context)
