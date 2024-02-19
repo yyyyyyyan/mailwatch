@@ -1,3 +1,4 @@
+from pathlib import Path
 from subprocess import CalledProcessError
 
 from watchdog.events import LoggingEventHandler
@@ -34,7 +35,7 @@ class NewMailEventHandler(LoggingEventHandler):
         super().on_created(event)
         context = {
             **self.mailbox.get_context(),
-            **self.mailbox.get_message_context(event.src_path),
+            **self.mailbox.get_message_context(Path(event.src_path).name),
         }
         self.logger.debug(f"Extra context for notification: {context}")
         self._send_notification(**context)
