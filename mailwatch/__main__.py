@@ -7,6 +7,7 @@ from pathlib import Path
 from mailwatch.events import NewMailEventHandler
 from mailwatch.logging import ColorFormatter
 from mailwatch.logging import LOG_LEVELS
+from mailwatch.notification import ContextVar
 
 
 class ExitCodes(IntEnum):
@@ -79,6 +80,14 @@ if __name__ == "__main__":
         dest="notification_icon",
         help="Use default notification icon (this option overrides --notification-icon)",
     )
+    notify_send_group.add_argument(
+        "--add",
+        "--additional-context",
+        action="append",
+        type=ContextVar,
+        dest="additional_context",
+        help=f"Additional context in the format key{ContextVar.SEPARATOR}value",
+    )
 
     args = parser.parse_args()
 
@@ -96,6 +105,7 @@ if __name__ == "__main__":
         sys.exit(ExitCodes.NOT_A_DIRECTORY)
 
     new_mail_event_handler = NewMailEventHandler(
+        logger,
         mailbox_path.parent,
         args.notification_command,
         args.notification_summary,
@@ -104,8 +114,11 @@ if __name__ == "__main__":
         args.notification_duration,
         args.notification_icon,
     )
-    new_mail_event_handler.notification_handler.add_default_context(
-        account=args.account, mailbox_path=mailbox_path
-    )
+    default_context = {"account": args.account, "mailbox_path": mailbox_path}
+    for context_variable in args.additional_context:
+        default_context[context_variable.key] = context_variable.value
+    logger.debug(f"Default context for notifications: {default_context}")
+    new_mail_event_handler.notification_handler.add_default_context(**default_context)
+
     # TODO: add offlineimap options to gather context
     # TODO: create observer and schedule event

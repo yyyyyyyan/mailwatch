@@ -10,6 +10,18 @@ class CommandNotFoundError(FileNotFoundError):
     pass
 
 
+class ContextVar:
+    SEPARATOR = ":"
+
+    def __init__(self, ctx_str):
+        try:
+            self.key, self.value = ctx_str.split(self.SEPARATOR, 1)
+        except ValueError as err:
+            raise ValueError(
+                f"{ctx_str} is not a valid context variable (not in key{self.SEPARATOR}value format)"
+            ) from err
+
+
 class NotificationHandler:
     def __init__(self, cmd_fmt, summary_fmt, body_fmt, urgency, duration, icon_fmt):
         self.cmd_fmt = cmd_fmt
