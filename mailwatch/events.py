@@ -17,7 +17,9 @@ class NewMailEventHandler(LoggingEventHandler):
     def _send_notification(self, **context):
         self.logger.debug(f"Context for notification: {context}")
         try:
-            self.notification_handler.send_notification(**context)
+            cmd = self.notification_handler.get_cmd(**context)
+            self.logger.debug(f"Running command: '{' '.join(cmd)}'")
+            self.notification_handler.send_notification(*cmd)
         except IconNotFoundError as err:
             self.logger.error(f"{err} - no icon will be used")
             self.notification_handler.icon_fmt = None

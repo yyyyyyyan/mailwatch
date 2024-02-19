@@ -1,8 +1,5 @@
-import logging
 import subprocess
 from pathlib import Path
-
-logger = logging.getLogger("mailwatch")
 
 
 class IconNotFoundError(FileNotFoundError):
@@ -53,9 +50,9 @@ class NotificationHandler:
         )
         return cmd
 
-    def send_notification(self, **context):
-        cmd = self.get_cmd(**context)
-        logger.debug(f"Running command: '{' '.join(cmd)}'")
+    def send_notification(self, *cmd, **context):
+        if not cmd:
+            cmd = self.get_cmd(**context)
         try:
             subprocess.run(cmd, capture_output=True, check=True)
         except FileNotFoundError as err:
