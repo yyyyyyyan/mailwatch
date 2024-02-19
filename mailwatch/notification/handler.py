@@ -11,7 +11,7 @@ class NotificationHandler:
         self.body_fmt = body_fmt
         self.urgency = urgency
         self.duration = duration
-        self.icon_fmt = icon_fmt
+        self.icon_fmt = str(icon_fmt)
         self._default_context = {}
 
     @property
@@ -27,7 +27,7 @@ class NotificationHandler:
     def get_cmd(self, **context):
         context = {**self.default_context, **context}
         cmd = [
-            self.cmd_fmt.format(**context).split(),
+            *self.cmd_fmt.format(**context).split(),
             f"--urgency={self.urgency}",
             f"--expire-time={self.duration}",
         ]

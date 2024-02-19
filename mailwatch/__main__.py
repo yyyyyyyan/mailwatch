@@ -47,13 +47,13 @@ if __name__ == "__main__":
     notify_send_group.add_argument(
         "-s",
         "--notification-summary",
-        default="New mail from {message.headers.from}",
+        default="New mail from {message__headers__from}",
         help="Notification summary",
     )
     notify_send_group.add_argument(
         "-b",
         "--notification-body",
-        default="{mailbox.unread_count} unread emails in {account}",
+        default="{mailbox__unread_count} unread emails in {account}",
         help="Notification body",
     )
     notify_send_group.add_argument(
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     mailbox_path = args.mail_path / args.account / args.mailbox / "new"
     if not mailbox_path.is_dir():
-        logger.critical(f"{mailbox_path} is not a valid directory")
+        logger.critical("%s is not a valid directory", mailbox_path)
         sys.exit(ExitCodes.NOT_A_DIRECTORY)
 
     new_mail_event_handler = NewMailEventHandler(
@@ -121,12 +121,12 @@ if __name__ == "__main__":
     default_context = {"account": args.account, "mailbox_path": mailbox_path}
     for context_variable in args.additional_context:
         default_context[context_variable.key] = context_variable.value
-    logger.debug(f"Default context for notifications: {default_context}")
+    logger.debug("Default context for notifications: %s", default_context)
     new_mail_event_handler.notification_handler.add_default_context(**default_context)
     observer = Observer()
     observer.schedule(new_mail_event_handler, mailbox_path)
     observer.start()
-    logger.info(f"Watching for new files at {mailbox_path}...")
+    logger.info("Watching for new files at %s...", mailbox_path)
     try:
         while True:
             sleep(1)

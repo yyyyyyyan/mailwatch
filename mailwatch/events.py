@@ -18,8 +18,10 @@ class NewMailEventHandler(FileSystemEventHandler):
     def _send_notification(self, **context):
         try:
             cmd = self.notification_handler.get_cmd(**context)
-            self.logger.debug("Running command: '%s'", " ".join(cmd))
+            self.logger.debug("Running command: '%s'", cmd)
             self.notification_handler.send_notification(*cmd)
+        except KeyError as err:
+            self.logger.error("Key not found in context: '%s'", err)
         except IconNotFoundError as err:
             self.logger.error("%s - no icon will be used", err)
             self.notification_handler.icon_fmt = None
