@@ -15,7 +15,6 @@ class NewMailEventHandler(LoggingEventHandler):
         super().__init__(logger)
 
     def _send_notification(self, **context):
-        self.logger.debug(f"Context for notification: {context}")
         try:
             cmd = self.notification_handler.get_cmd(**context)
             self.logger.debug(f"Running command: '{' '.join(cmd)}'")
@@ -37,5 +36,5 @@ class NewMailEventHandler(LoggingEventHandler):
             **self.mailbox.get_context(),
             **self.mailbox.get_message_context(event.src_path),
         }
-        self.logger.debug(f"Context for notification: {context}")
+        self.logger.debug(f"Extra context for notification: {context}")
         self._send_notification(**context)
