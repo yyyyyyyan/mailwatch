@@ -1,7 +1,7 @@
 from pathlib import Path
 from subprocess import CalledProcessError
 
-from watchdog.events import LoggingEventHandler
+from watchdog.events import FileSystemEventHandler
 
 from mailwatch.mailbox import MailWatchMailbox
 from mailwatch.notification import NotificationHandler
@@ -9,11 +9,11 @@ from mailwatch.notification.exceptions import CommandNotFoundError
 from mailwatch.notification.exceptions import IconNotFoundError
 
 
-class NewMailEventHandler(LoggingEventHandler):
+class NewMailEventHandler(FileSystemEventHandler):
     def __init__(self, logger, mailbox_path, *notification_options):
+        self.logger = logger
         self.mailbox = MailWatchMailbox(mailbox_path, create=False)
         self.notification_handler = NotificationHandler(*notification_options)
-        super().__init__(logger)
 
     def _send_notification(self, **context):
         try:
@@ -33,7 +33,8 @@ class NewMailEventHandler(LoggingEventHandler):
             )
 
     def on_created(self, event):
-        super().on_created(event)
+        what = "directory" if event.is_directory else "file"
+        self.logger.info("Created %s: %s", what, event.src_path)
         context = {
             **self.mailbox.get_context(),
             **self.mailbox.get_message_context(Path(event.src_path).name),
