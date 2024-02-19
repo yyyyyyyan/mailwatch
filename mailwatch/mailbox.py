@@ -25,7 +25,7 @@ class MailWatchMailbox(Maildir):
         message = self.get_message(key)
         context = {"message.delivery_date": datetime.fromtimestamp(message.get_date())}
         for header_key, header_value in message.items():
-            header_decoded, header_charset = decode_header(header_value)
+            header_decoded, header_charset = decode_header(header_value)[0]
             if header_charset is not None:
                 header_decoded = header_decoded.decode(header_charset)
             context[f"message.headers.{header_key.lower()}"] = header_decoded
