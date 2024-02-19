@@ -3,6 +3,9 @@ import sys
 from argparse import ArgumentParser
 from enum import IntEnum
 from pathlib import Path
+from time import sleep
+
+from watchdog.observers import Observer
 
 from mailwatch.events import NewMailEventHandler
 from mailwatch.logging import ColorFormatter
@@ -88,6 +91,7 @@ if __name__ == "__main__":
         dest="additional_context",
         help=f"Additional context in the format key{ContextVar.SEPARATOR}value",
     )
+    # TODO: --additional-context-file - load additional context from ini/json/toml file
 
     args = parser.parse_args()
 
@@ -119,6 +123,14 @@ if __name__ == "__main__":
         default_context[context_variable.key] = context_variable.value
     logger.debug(f"Default context for notifications: {default_context}")
     new_mail_event_handler.notification_handler.add_default_context(**default_context)
-
-    # TODO: add offlineimap options to gather context
-    # TODO: create observer and schedule event
+    observer = Observer()
+    observer.schedule(new_mail_event_handler, mailbox_path)
+    observer.start()
+    logger.info(f"Watching for new files at {mailbox_path}...")
+    try:
+        while True:
+            sleep(1)
+    except KeyboardInterrupt:
+        logger.critical("SIGINT detected, exiting...")
+        observer.stop()
+    observer.join()
