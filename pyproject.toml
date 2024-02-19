@@ -37,7 +37,7 @@ select = [
     "RUF015",
     "RUF016",
 ]
-ignore = ["E501", "S603", "G004", "TD002", "TD003", "PLR0913"]
+ignore = ["E501", "S603", "TD002", "TD003", "PLR0913"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
