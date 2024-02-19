@@ -3,9 +3,9 @@ from subprocess import CalledProcessError
 from watchdog.events import LoggingEventHandler
 
 from mailwatch.mailbox import MailWatchMailbox
-from mailwatch.notification import CommandNotFoundError
-from mailwatch.notification import IconNotFoundError
 from mailwatch.notification import NotificationHandler
+from mailwatch.notification.exceptions import CommandNotFoundError
+from mailwatch.notification.exceptions import IconNotFoundError
 
 
 class NewMailEventHandler(LoggingEventHandler):

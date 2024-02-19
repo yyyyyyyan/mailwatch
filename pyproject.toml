@@ -43,5 +43,8 @@ ignore = ["E501", "S603", "G004", "TD002", "TD003", "PLR0913"]
 force-single-line = true
 order-by-type = false
 
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
 [tool.ruff.format]
 line-ending = "lf"
