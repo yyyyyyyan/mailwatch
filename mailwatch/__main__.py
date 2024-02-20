@@ -1,5 +1,6 @@
 import logging
 import sys
+from argparse import ArgumentDefaultsHelpFormatter
 from argparse import ArgumentParser
 from enum import IntEnum
 from pathlib import Path
@@ -19,7 +20,10 @@ class ExitCodes(IntEnum):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Send notification on new maildir mail")
+    parser = ArgumentParser(
+        description="Send notification on new maildir mail",
+        formatter_class=ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument("account")
     parser.add_argument("-m", "--mailbox", default="INBOX", help="Mailbox name")
     parser.add_argument(
@@ -47,13 +51,13 @@ if __name__ == "__main__":
     notify_send_group.add_argument(
         "-s",
         "--notification-summary",
-        default="New mail from {message__headers__from}",
+        default="New mail from {message.headers.from}",
         help="Notification summary",
     )
     notify_send_group.add_argument(
         "-b",
         "--notification-body",
-        default="{mailbox__unread_count} unread emails in {account}",
+        default="{mailbox.unread_count} unread emails in {account}",
         help="Notification body",
     )
     notify_send_group.add_argument(
@@ -87,6 +91,7 @@ if __name__ == "__main__":
         "--add",
         "--additional-context",
         action="append",
+        default=[],
         type=ContextVar,
         dest="additional_context",
         help=f"Additional context in the format key{ContextVar.SEPARATOR}value",
@@ -122,7 +127,7 @@ if __name__ == "__main__":
     for context_variable in args.additional_context:
         default_context[context_variable.key] = context_variable.value
     logger.debug("Default context for notifications: %s", default_context)
-    new_mail_event_handler.notification_handler.add_default_context(**default_context)
+    new_mail_event_handler.notification_handler.set_default_context(**default_context)
     observer = Observer()
     observer.schedule(new_mail_event_handler, mailbox_path)
     observer.start()

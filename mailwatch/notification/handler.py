@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 
+from mailwatch.notification.context import Context
 from mailwatch.notification.exceptions import CommandNotFoundError
 
 
@@ -12,20 +13,20 @@ class NotificationHandler:
         self.urgency = urgency
         self.duration = duration
         self.icon_fmt = str(icon_fmt)
-        self._default_context = {}
+        self._default_context = Context()
 
     @property
     def default_context(self):
         return self._default_context
 
     def set_default_context(self, **context):
-        self._default_context = context
+        self._default_context = Context(**context)
 
     def add_default_context(self, **context):
         self._default_context.update(context)
 
     def get_cmd(self, **context):
-        context = {**self.default_context, **context}
+        context = self.default_context | context
         cmd = [
             *self.cmd_fmt.format(**context).split(),
             f"--urgency={self.urgency}",

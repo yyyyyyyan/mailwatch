@@ -14,19 +14,22 @@ class MailWatchMailbox(Maildir):
             else:
                 unread_count += 1
         return {
-            "mailbox__new_count": new_count,
-            "mailbox__unread_count": unread_count,
-            "mailbox__read_count": read_count,
-            "mailbox__total_count": unread_count + read_count,
+            "new_count": new_count,
+            "unread_count": unread_count,
+            "read_count": read_count,
+            "total_count": unread_count + read_count,
         }
 
     def get_message_context(self, filename):
         key = filename.split(self.colon)[0]
         message = self.get_message(key)
-        context = {"message__delivery_date": datetime.fromtimestamp(message.get_date())}
+        context = {
+            "delivery_date": datetime.fromtimestamp(message.get_date()),
+            "headers": {},
+        }
         for header_key, header_value in message.items():
             header_decoded, header_charset = decode_header(header_value)[0]
             if header_charset is not None:
                 header_decoded = header_decoded.decode(header_charset)
-            context[f"message__headers__{header_key.lower()}"] = header_decoded
+            context["headers"][header_key] = header_decoded
         return context

@@ -38,8 +38,8 @@ class NewMailEventHandler(FileSystemEventHandler):
         what = "directory" if event.is_directory else "file"
         self.logger.info("Created %s: %s", what, event.src_path)
         context = {
-            **self.mailbox.get_context(),
-            **self.mailbox.get_message_context(Path(event.src_path).name),
+            "mailbox": self.mailbox.get_context(),
+            "message": self.mailbox.get_message_context(Path(event.src_path).name),
         }
         self.logger.debug("Extra context for notification: %s", context)
         self._send_notification(**context)
