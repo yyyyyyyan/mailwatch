@@ -35,7 +35,7 @@ class NotificationHandler:
         if self.icon_fmt is not None:
             icon = Path(self.icon_fmt.format(**context)).resolve()
             if not icon.is_file():
-                raise FileNotFoundError(f"{icon} is not a valid file")
+                raise FileNotFoundError(f"'{icon}' is not a valid file")
             cmd.append(f"--icon={icon}")
         cmd.extend(
             [

@@ -42,6 +42,7 @@ ignore = ["E501", "S603", "TD002", "TD003", "PLR0913"]
 [tool.ruff.lint.isort]
 force-single-line = true
 order-by-type = false
+extra-standard-library = ["tomllib"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

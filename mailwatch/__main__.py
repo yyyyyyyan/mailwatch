@@ -12,6 +12,8 @@ from mailwatch.events import NewMailEventHandler
 from mailwatch.logging import ColorFormatter
 from mailwatch.logging import LOG_LEVELS
 from mailwatch.notification import ContextVar
+from mailwatch.notification.context import Context
+from mailwatch.notification.context import ContextFile
 
 
 class ExitCodes(IntEnum):
@@ -96,7 +98,15 @@ if __name__ == "__main__":
         dest="additional_context",
         help=f"Additional context in the format key{ContextVar.SEPARATOR}value",
     )
-    # TODO: --additional-context-file - load additional context from ini/json/toml file
+    notify_send_group.add_argument(
+        "--addf",
+        "--additional-context-file",
+        action="append",
+        default=[],
+        type=ContextFile,
+        dest="additional_context_files",
+        help=f"Load additional context from ini/json/toml config file in the format key{ContextFile.SEPARATOR}path",
+    )
 
     args = parser.parse_args()
 
@@ -110,7 +120,7 @@ if __name__ == "__main__":
 
     mailbox_path = args.mail_path / args.account / args.mailbox / "new"
     if not mailbox_path.is_dir():
-        logger.critical("%s is not a valid directory", mailbox_path)
+        logger.critical("'%s' is not a valid directory", mailbox_path)
         sys.exit(ExitCodes.NOT_A_DIRECTORY)
 
     new_mail_event_handler = NewMailEventHandler(
@@ -123,15 +133,22 @@ if __name__ == "__main__":
         args.notification_duration,
         args.notification_icon,
     )
-    default_context = {"account": args.account, "mailbox_path": mailbox_path}
+
+    default_context = Context(account=args.account, mailbox_path=mailbox_path)
+    for context_file in args.additional_context_files:
+        try:
+            default_context[context_file.key] = Context.from_file(context_file.value)
+        except (ValueError, FileNotFoundError) as err:  # noqa: PERF203
+            logger.error(err)
     for context_variable in args.additional_context:
         default_context[context_variable.key] = context_variable.value
-    logger.debug("Default context for notifications: %s", default_context)
     new_mail_event_handler.notification_handler.set_default_context(**default_context)
+    logger.debug("Default context for notifications: %s", default_context)
+
     observer = Observer()
     observer.schedule(new_mail_event_handler, mailbox_path)
     observer.start()
-    logger.info("Watching for new files at %s...", mailbox_path)
+    logger.info("Watching for new files at '%s'...", mailbox_path)
     try:
         while True:
             sleep(1)
