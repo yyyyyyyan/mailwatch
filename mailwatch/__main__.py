@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 from argparse import ArgumentDefaultsHelpFormatter
 from argparse import ArgumentParser
@@ -27,7 +28,37 @@ if __name__ == "__main__":
         formatter_class=ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("account")
-    parser.add_argument("-m", "--mailbox", default="INBOX", help="Mailbox name")
+    mailbox_group = parser.add_argument_group("Mailbox Options")
+    mailbox_group.add_argument(
+        "-m",
+        "--mailbox",
+        default=[],
+        action="append",
+        type=re.escape,
+        help="Mailbox names",
+    )
+    mailbox_group.add_argument(
+        "--mailbox-regex",
+        "--mr",
+        default=[],
+        action="append",
+        help="Mailbox name regex patterns",
+    )
+    mailbox_group.add_argument(
+        "--mailbox-exclude",
+        "--mex",
+        default=[],
+        action="append",
+        type=re.escape,
+        help="Mailbox names to exclude",
+    )
+    mailbox_group.add_argument(
+        "--mailbox-exclude-regex",
+        "--mexr",
+        default=["Sent", "Spam", "Drafts", "Trash"],
+        action="append",
+        help="Mailbox name regex patterns to exclude",
+    )
     parser.add_argument(
         "-p",
         "--mail-path",
@@ -118,14 +149,28 @@ if __name__ == "__main__":
     stream_handler.setFormatter(ColorFormatter())
     logger.addHandler(stream_handler)
 
-    mailbox_path = args.mail_path / args.account / args.mailbox / "new"
-    if not mailbox_path.is_dir():
-        logger.critical("'%s' is not a valid directory", mailbox_path)
+    mail_path = args.mail_path / args.account
+    if not mail_path.is_dir():
+        logger.critical("'%s' is not a valid directory", mail_path)
         sys.exit(ExitCodes.NOT_A_DIRECTORY)
+    mail_path_escaped = re.escape(str(mail_path))
+    mailbox_regexes = [
+        f"{mail_path_escaped}/{mailbox}/new/"
+        for mailboxes in [args.mailbox, args.mailbox_regex]
+        for mailbox in mailboxes
+    ]
+    if not mailbox_regexes:
+        mailbox_regexes.append(f"{mail_path_escaped}/[^/]+/new/")
+    mailbox_exclude_regexes = [
+        f"{mail_path_escaped}/{mailbox}/"
+        for mailboxes in [args.mailbox_exclude, args.mailbox_exclude_regex]
+        for mailbox in mailboxes
+    ]
 
     new_mail_event_handler = NewMailEventHandler(
+        mailbox_regexes,
+        mailbox_exclude_regexes,
         logger,
-        mailbox_path.parent,
         args.notification_command,
         args.notification_summary,
         args.notification_body,
@@ -134,7 +179,7 @@ if __name__ == "__main__":
         args.notification_icon,
     )
 
-    default_context = Context(account=args.account, mailbox_path=mailbox_path)
+    default_context = Context(account=args.account)
     for context_file in args.additional_context_files:
         try:
             default_context[context_file.key] = Context.from_file(context_file.value)
@@ -146,9 +191,11 @@ if __name__ == "__main__":
     logger.debug("Default context for notifications: %s", default_context)
 
     observer = Observer()
-    observer.schedule(new_mail_event_handler, mailbox_path)
+    observer.schedule(new_mail_event_handler, mail_path, recursive=True)
     observer.start()
-    logger.info("Watching for new files at '%s'...", mailbox_path)
+    logger.info("Mailbox regexes '%s'...", mailbox_regexes)
+    logger.info("Mailbox exclude regexes '%s'...", mailbox_exclude_regexes)
+    logger.info("Watching for new files at '%s'...", mail_path)
     try:
         while True:
             sleep(1)

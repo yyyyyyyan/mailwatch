@@ -1,7 +1,7 @@
 from pathlib import Path
 from subprocess import CalledProcessError
 
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import RegexMatchingEventHandler
 
 from mailwatch.mailbox import MailWatchMailbox
 from mailwatch.notification import NotificationHandler
@@ -9,11 +9,18 @@ from mailwatch.notification.exceptions import CommandNotFoundError
 from mailwatch.notification.exceptions import IconNotFoundError
 
 
-class NewMailEventHandler(FileSystemEventHandler):
-    def __init__(self, logger, mailbox_path, *notification_options):
+class NewMailEventHandler(RegexMatchingEventHandler):
+    def __init__(
+        self,
+        regexes,
+        ignore_regexes,
+        logger,
+        *notification_options,
+    ):
+        super().__init__(regexes, ignore_regexes, ignore_directories=True)
         self.logger = logger
-        self.mailbox = MailWatchMailbox(mailbox_path, create=False)
         self.notification_handler = NotificationHandler(*notification_options)
+        self.mailboxes = {}
 
     def _send_notification(self, **context):
         try:
@@ -34,12 +41,23 @@ class NewMailEventHandler(FileSystemEventHandler):
                 {"return_code": err.returncode, "stderr": err.stderr.decode("utf8")},
             )
 
-    def on_created(self, event):
-        what = "directory" if event.is_directory else "file"
-        self.logger.info("Created %s: %s", what, event.src_path)
+    def _on_new_mail(self, message_path):
+        self.logger.info("New file: %s", message_path)
+        message_path = Path(message_path)
+        mailbox_path = message_path.parent.parent
+        mailbox_name = mailbox_path.name
+        if mailbox_name not in self.mailboxes:
+            self.mailboxes[mailbox_name] = MailWatchMailbox(mailbox_path, create=False)
+        mailbox = self.mailboxes[mailbox_name]
         context = {
-            "mailbox": self.mailbox.get_context(),
-            "message": self.mailbox.get_message_context(Path(event.src_path).name),
+            "mailbox": mailbox.get_context(),
+            "message": mailbox.get_message_context(message_path.name),
         }
         self.logger.debug("Extra context for notification: %s", context)
         self._send_notification(**context)
+
+    def on_created(self, event):
+        self._on_new_mail(event.src_path)
+
+    def on_moved(self, event):
+        self._on_new_mail(event.dest_path)

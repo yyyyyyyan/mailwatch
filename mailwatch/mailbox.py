@@ -1,9 +1,14 @@
 from datetime import datetime
 from email.header import decode_header
 from mailbox import Maildir
+from pathlib import Path
 
 
 class MailWatchMailbox(Maildir):
+    def __init__(self, dirname, **kwargs):
+        self.name = Path(dirname).name
+        super().__init__(dirname, **kwargs)
+
     def get_context(self):
         new_count = unread_count = read_count = 0
         for message in self:
@@ -14,6 +19,8 @@ class MailWatchMailbox(Maildir):
             else:
                 unread_count += 1
         return {
+            "name": self.name,
+            "path": self._path,
             "new_count": new_count,
             "unread_count": unread_count,
             "read_count": read_count,
