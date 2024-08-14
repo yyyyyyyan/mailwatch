@@ -166,6 +166,7 @@ if __name__ == "__main__":
         for mailboxes in [args.mailbox_exclude, args.mailbox_exclude_regex]
         for mailbox in mailboxes
     ]
+    mailbox_exclude_regexes.append(f"{mail_path_escaped}/[^/]+/cur/")
 
     new_mail_event_handler = NewMailEventHandler(
         mailbox_regexes,
