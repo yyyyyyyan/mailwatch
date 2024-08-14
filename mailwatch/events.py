@@ -42,7 +42,6 @@ class NewMailEventHandler(RegexMatchingEventHandler):
             )
 
     def _on_new_mail(self, message_path):
-        self.logger.info("New file: %s", message_path)
         message_path = Path(message_path)
         mailbox_path = message_path.parent.parent
         mailbox_name = mailbox_path.name
@@ -57,7 +56,9 @@ class NewMailEventHandler(RegexMatchingEventHandler):
         self._send_notification(**context)
 
     def on_created(self, event):
+        self.logger.info("New file: '%s'", event.src_path)
         self._on_new_mail(event.src_path)
 
     def on_moved(self, event):
+        self.logger.info("Moved file: '%s' -> '%s'", event.src_path, event.dest_path)
         self._on_new_mail(event.dest_path)
